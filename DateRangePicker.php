@@ -1,6 +1,8 @@
 <?php
 
-namespace omnilight\assets;
+namespace omnilight\widgets;
+use omnilight\assets\DateRangePickerBootstrap2Asset;
+use omnilight\assets\DateRangePickerBootstrap3Asset;
 use Yii;
 use yii\base\InvalidConfigException;
 use yii\helpers\FormatConverter;
