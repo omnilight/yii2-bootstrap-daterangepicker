@@ -18,5 +18,6 @@ class DateRangePickerAsset extends AssetBundle
 
     public $depends = [
         'omnilight\assets\MomentAsset',
+        'yii\web\JqueryAsset',
     ];
 } 
