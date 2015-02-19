@@ -5,8 +5,10 @@ use omnilight\assets\DateRangePickerBootstrap2Asset;
 use omnilight\assets\DateRangePickerBootstrap3Asset;
 use Yii;
 use yii\base\InvalidConfigException;
+use yii\helpers\ArrayHelper;
 use yii\helpers\FormatConverter;
 use yii\helpers\Json;
+use yii\web\JsExpression;
 use yii\widgets\InputWidget;
 use yii\helpers\Html;
 
@@ -39,6 +41,10 @@ class DateRangePicker extends InputWidget
      * @var string
      */
     public $bootstrapVersion = self::BOOTSTRAP3;
+    /**
+     * @var array
+     */
+    public $defaultRanges = true;
     /**
      * @var string
      */
@@ -84,6 +90,16 @@ class DateRangePicker extends InputWidget
         $this->clientOptions['timePicker'] = $this->timePicker;
         $this->clientOptions['timePicker12Hour'] = $this->timePicker12Hour;
         $this->clientOptions['separator'] = $this->separator;
+        if ($this->defaultRanges && ArrayHelper::getValue($this->clientOptions, 'range') === null) {
+            $this->clientOptions['ranges'] = [
+                'Today' => new JsExpression('[new Date(), new Date()]'),
+                'Yesterday' => new JsExpression('[moment().subtract("days", 1), moment().subtract("days", 1)]'),
+                'Last 7 Days' => new JsExpression('[moment().subtract("days", 6), new Date()]'),
+                'Last 30 Days' => new JsExpression('[moment().subtract("days", 29), new Date()]'),
+                'This Month' => new JsExpression('[moment().startOf("month"), moment().endOf("month")]'),
+                'Last Month' => new JsExpression('[moment().subtract("month", 1).startOf("month"), moment().subtract("month", 1).endOf("month")]'),
+            ];
+        }
 
 
         $this->registerClientOptions('daterangepicker', $containerID);
