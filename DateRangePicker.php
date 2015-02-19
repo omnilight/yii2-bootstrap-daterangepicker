@@ -76,7 +76,7 @@ class DateRangePicker extends InputWidget
         $language = $this->language ? $this->language : Yii::$app->language;
 
         if (strncmp($this->dateFormat, 'php:', 4) === 0) {
-            $format = $this->dateFormat;
+            $format = substr($this->dateFormat, 4);
         } else {
             $format = FormatConverter::convertDateIcuToPhp($this->dateFormat, 'datetime', $language);
         }
