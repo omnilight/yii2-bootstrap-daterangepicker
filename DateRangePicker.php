@@ -1,16 +1,17 @@
 <?php
 
 namespace omnilight\widgets;
+
 use omnilight\assets\DateRangePickerBootstrap2Asset;
 use omnilight\assets\DateRangePickerBootstrap3Asset;
 use Yii;
 use yii\base\InvalidConfigException;
 use yii\helpers\ArrayHelper;
 use yii\helpers\FormatConverter;
+use yii\helpers\Html;
 use yii\helpers\Json;
 use yii\web\JsExpression;
 use yii\widgets\InputWidget;
-use yii\helpers\Html;
 
 
 /**
@@ -60,12 +61,15 @@ class DateRangePicker extends InputWidget
         if ($this->dateFormat === null) {
             $this->dateFormat = $this->timePicker ? Yii::$app->formatter->datetimeFormat : Yii::$app->formatter->dateFormat;
         }
+        if ($this->language === null) {
+            $this->language = Yii::$app->language;
+        }
     }
 
 
     public function run()
     {
-        echo $this->renderWidget() ."\n";
+        echo $this->renderWidget() . "\n";
 
         switch ($this->bootstrapVersion) {
             case self::BOOTSTRAP2:
@@ -75,31 +79,23 @@ class DateRangePicker extends InputWidget
                 DateRangePickerBootstrap3Asset::register($this->view);
                 break;
             default:
-                throw new InvalidConfigException('Invalid bootstrap version: '.$this->bootstrapVersion);
+                throw new InvalidConfigException('Invalid bootstrap version: ' . $this->bootstrapVersion);
         }
 
         $containerID = $this->options['id'];
-        $language = $this->language ? $this->language : Yii::$app->language;
 
         if (strncmp($this->dateFormat, 'php:', 4) === 0) {
             $format = substr($this->dateFormat, 4);
         } else {
-            $format = FormatConverter::convertDateIcuToPhp($this->dateFormat, 'datetime', $language);
+            $format = FormatConverter::convertDateIcuToPhp($this->dateFormat, 'datetime', $this->language);
         }
         $this->clientOptions['format'] = $this->convertDateFormat($format);
         $this->clientOptions['timePicker'] = $this->timePicker;
         $this->clientOptions['timePicker12Hour'] = $this->timePicker12Hour;
         $this->clientOptions['separator'] = $this->separator;
-        if ($this->defaultRanges && ArrayHelper::getValue($this->clientOptions, 'range') === null) {
-            $this->clientOptions['ranges'] = [
-                'Today' => new JsExpression('[new Date(), new Date()]'),
-                'Yesterday' => new JsExpression('[moment().subtract("days", 1), moment().subtract("days", 1)]'),
-                'Last 7 Days' => new JsExpression('[moment().subtract("days", 6), new Date()]'),
-                'Last 30 Days' => new JsExpression('[moment().subtract("days", 29), new Date()]'),
-                'This Month' => new JsExpression('[moment().startOf("month"), moment().endOf("month")]'),
-                'Last Month' => new JsExpression('[moment().subtract("month", 1).startOf("month"), moment().subtract("month", 1).endOf("month")]'),
-            ];
-        }
+
+        $this->setupRanges();
+        $this->localize();
 
 
         $this->registerClientOptions('daterangepicker', $containerID);
@@ -123,20 +119,6 @@ class DateRangePicker extends InputWidget
         }
 
         return implode("\n", $contents);
-    }
-
-    /**
-     * Registers a specific jQuery UI widget options
-     * @param string $name the name of the jQuery UI widget
-     * @param string $id the ID of the widget
-     */
-    protected function registerClientOptions($name, $id)
-    {
-        if ($this->clientOptions !== false) {
-            $options = empty($this->clientOptions) ? '' : Json::encode($this->clientOptions);
-            $js = "jQuery('#$id').$name($options);";
-            $this->getView()->registerJs($js);
-        }
     }
 
     /**
@@ -197,5 +179,45 @@ class DateRangePicker extends InputWidget
             // unix timestamp
             'U' => 'X',
         ]);
+    }
+
+    protected function setupRanges()
+    {
+        if ($this->defaultRanges && ArrayHelper::getValue($this->clientOptions, 'range') === null) {
+            $this->clientOptions['ranges'] = [
+                Yii::t('omnilight/daterangepicker', 'Today', [], $this->language) => new JsExpression('[new Date(), new Date()]'),
+                Yii::t('omnilight/daterangepicker', 'Yesterday', [], $this->language) => new JsExpression('[moment().subtract("days", 1), moment().subtract("days", 1)]'),
+                Yii::t('omnilight/daterangepicker', 'Last 7 Days', [], $this->language) => new JsExpression('[moment().subtract("days", 6), new Date()]'),
+                Yii::t('omnilight/daterangepicker', 'Last 30 Days', [], $this->language) => new JsExpression('[moment().subtract("days", 29), new Date()]'),
+                Yii::t('omnilight/daterangepicker', 'This Month', [], $this->language) => new JsExpression('[moment().startOf("month"), moment().endOf("month")]'),
+                Yii::t('omnilight/daterangepicker', 'Last Month', [], $this->language) => new JsExpression('[moment().subtract("month", 1).startOf("month"), moment().subtract("month", 1).endOf("month")]'),
+            ];
+        }
+    }
+
+    protected function localize()
+    {
+        $this->clientOptions['locale'] = [
+            'applyLabel' => Yii::t('omnilight/daterangepicker', 'Apply', [], $this->language),
+            'cancelLabel' => Yii::t('omnilight/daterangepicker', 'Cancel', [], $this->language),
+            'fromLabel' => Yii::t('omnilight/daterangepicker', 'From', [], $this->language),
+            'toLabel' => Yii::t('omnilight/daterangepicker', 'To', [], $this->language),
+            'weekLabel' => Yii::t('omnilight/daterangepicker', 'W', [], $this->language),
+            'customRangeLabel' => Yii::t('omnilight/daterangepicker', 'Custom Range', [], $this->language),
+        ];
+    }
+
+    /**
+     * Registers a specific jQuery UI widget options
+     * @param string $name the name of the jQuery UI widget
+     * @param string $id the ID of the widget
+     */
+    protected function registerClientOptions($name, $id)
+    {
+        if ($this->clientOptions !== false) {
+            $options = empty($this->clientOptions) ? '' : Json::encode($this->clientOptions);
+            $js = "jQuery('#$id').$name($options);";
+            $this->getView()->registerJs($js);
+        }
     }
 }

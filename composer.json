@@ -1,25 +1,34 @@
 {
-    "name": "omnilight/yii2-bootstrap-daterangepicker",
-    "description": "Date range picker component for Bootstrap for Yii2 framework",
-    "keywords": ["yii2", "date", "range", "picker"],
-    "minimum-stability": "dev",
-    "authors": [
-        {
-            "name": "Pavel Agalecky",
-            "email": "pavel.agalecky@gmail.com"
-        }
-    ],
-    "type": "yii2-extension",
-    "require": {
-        "php": ">=5.4.0",
-        "yiisoft/yii2": "*",
-        "omnilight/yii2-momentjs": "*",
-        "bower-asset/bootstrap-daterangepicker": "1.3.17"
-    },
-    "autoload": {
-        "psr-4": {
-            "omnilight\\assets\\": "",
-            "omnilight\\widgets\\": ""
-        }
+  "name": "omnilight/yii2-bootstrap-daterangepicker",
+  "description": "Date range picker component for Bootstrap for Yii2 framework",
+  "keywords": [
+    "yii2",
+    "date",
+    "range",
+    "picker"
+  ],
+  "minimum-stability": "dev",
+  "authors": [
+    {
+      "name": "Pavel Agalecky",
+      "email": "pavel.agalecky@gmail.com"
     }
+  ],
+  "type": "yii2-extension",
+  "require": {
+    "php": ">=5.4.0",
+    "yiisoft/yii2": "*",
+    "omnilight/yii2-momentjs": "*",
+    "bower-asset/bootstrap-daterangepicker": "1.3.17"
+  },
+  "autoload": {
+    "psr-4": {
+      "omnilight\\assets\\": "",
+      "omnilight\\widgets\\": "",
+      "omnilight\\daterangepicker\\": ""
+    }
+  },
+  "extra": {
+    "bootstrap": "omnilight\\daterangepicker\\Bootstrap"
+  }
 }
