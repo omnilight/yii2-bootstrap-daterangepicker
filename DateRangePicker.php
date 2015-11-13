@@ -187,7 +187,7 @@ class DateRangePicker extends InputWidget
 
     protected function setupRanges()
     {
-        if ($this->defaultRanges && ArrayHelper::getValue($this->clientOptions, 'range') === null) {
+        if ($this->defaultRanges && ArrayHelper::getValue($this->clientOptions, 'ranges') === null) {
             $this->clientOptions['ranges'] = [
                 Yii::t('omnilight/daterangepicker', 'Today', [], $this->language) => new JsExpression('[new Date(), new Date()]'),
                 Yii::t('omnilight/daterangepicker', 'Yesterday', [], $this->language) => new JsExpression('[moment().subtract("days", 1), moment().subtract("days", 1)]'),
