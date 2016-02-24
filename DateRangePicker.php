@@ -64,11 +64,6 @@ class DateRangePicker extends InputWidget
      *  - `tag`: the tag name, defaults to input
      */
     public $options = [];
-    /**
-     * @var JsExpression the callback that will be passed to the JS plugin call as a second argument
-     * @see http://www.daterangepicker.com/#ex3
-     */
-    public $callback;
 
     public function init()
     {
@@ -238,11 +233,14 @@ class DateRangePicker extends InputWidget
             'separator' => $this->separator,
         ], $this->clientOptions);
 
-        $arguments = [Json::encode($options)];
-        if ($this->callback !== null) {
-            $arguments[] = $this->callback;
-        }
+        $this->getView()->registerJs("$('#$id').daterangepicker(" . Json::encode($options) . ');');
 
-        $this->view->registerJs("$('#$id').daterangepicker(" . implode(',', $arguments) . ');');
+        if ($this->clientEvents) {
+            $js = "$('#$id')";
+            foreach ($this->clientEvents as $event => $handler) {
+                $js .= ".on('$event', $handler)";
+            }
+            $this->getView()->registerJs($js . ';');
+        }
     }
 }
