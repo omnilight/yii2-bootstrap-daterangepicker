@@ -64,6 +64,11 @@ class DateRangePicker extends InputWidget
      *  - `tag`: the tag name, defaults to input
      */
     public $options = [];
+    /**
+     * @var JsExpression the callback that will be passed to the JS plugin call as a second argument
+     * @see http://www.daterangepicker.com/#ex3
+     */
+    public $callback;
 
     public function init()
     {
@@ -79,7 +84,7 @@ class DateRangePicker extends InputWidget
 
     public function run()
     {
-        echo $this->renderWidget() . "\n";
+        echo $this->renderInput() . "\n";
 
         $this->setupRanges();
         $this->localize();
@@ -106,24 +111,22 @@ class DateRangePicker extends InputWidget
         }
     }
 
-    protected function renderWidget()
+    /**
+     * @return string
+     */
+    protected function renderInput()
     {
-        if ($this->hasModel()) {
-            $value = Html::getAttributeValue($this->model, $this->attribute);
-        } else {
-            $value = $this->value;
-        }
-
         $options = $this->options;
-        $options['value'] = $value;
 
-        if ($this->hasModel()) {
-            $contents[] = Html::activeTextInput($this->model, $this->attribute, $options);
-        } else {
-            $contents[] = Html::textInput($this->name, $value, $options);
+        if (isset($options['tag']) && $options['tag'] === false) {
+            return '';
         }
 
-        return implode("\n", $contents);
+        if ($this->hasModel()) {
+            return Html::activeTextInput($this->model, $this->attribute, $options);
+        } else {
+            return Html::textInput($this->name, $this->value, $options);
+        }
     }
 
     /**
@@ -235,6 +238,11 @@ class DateRangePicker extends InputWidget
             'separator' => $this->separator,
         ], $this->clientOptions);
 
-        $this->view->registerJs("$('#$id').daterangepicker(" . Json::encode($options) . )
+        $arguments = [Json::encode($options)];
+        if ($this->callback !== null) {
+            $arguments[] = $this->callback;
+        }
+
+        $this->view->registerJs("$('#$id').daterangepicker(" . implode(',', $arguments) . ');');
     }
 }
