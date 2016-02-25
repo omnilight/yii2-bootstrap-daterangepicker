@@ -61,7 +61,8 @@ class DateRangePicker extends InputWidget
     /**
      * @inheritdoc
      * The following options are specially handled:
-     *  - `tag`: the tag name, defaults to input
+     *  - `tag`: the tag name. Set to `false` in order to prevent input render. When the property is not set, widget
+     * will render the `<input>` tag.
      */
     public $options = [];
 
@@ -113,14 +114,20 @@ class DateRangePicker extends InputWidget
     {
         $options = $this->options;
 
-        if (isset($options['tag']) && $options['tag'] === false) {
-            return '';
-        }
+        if (isset($options['tag'])) {
+            if ($options['tag'] === false) {
+                return '';
+            }
 
-        if ($this->hasModel()) {
-            return Html::activeTextInput($this->model, $this->attribute, $options);
+            $tag = ArrayHelper::remove($options, 'tag');
+            $value = $this->hasModel() ? Html::getAttributeValue($this->model, $this->attribute) : $this->value;
+            return Html::tag($tag, $value, $options);
         } else {
-            return Html::textInput($this->name, $this->value, $options);
+            if ($this->hasModel()) {
+                return Html::activeTextInput($this->model, $this->attribute, $options);
+            } else {
+                return Html::textInput($this->name, $this->value, $options);
+            }
         }
     }
 
