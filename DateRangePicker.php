@@ -58,6 +58,13 @@ class DateRangePicker extends InputWidget
      * @var array the events for the underlying js widget
      */
     public $clientEvents = [];
+    /**
+     * @inheritdoc
+     * The following options are specially handled:
+     *  - `tag`: the tag name. Set to `false` in order to prevent input render. When the property is not set, widget
+     * will render the `<input>` tag.
+     */
+    public $options = [];
 
     public function init()
     {
@@ -73,8 +80,21 @@ class DateRangePicker extends InputWidget
 
     public function run()
     {
-        echo $this->renderWidget() . "\n";
+        echo $this->renderInput() . "\n";
 
+        $this->setupRanges();
+        $this->localize();
+
+        $this->registerClientScript();
+    }
+
+    /**
+     * Registers the assets
+     * @void
+     * @throws InvalidConfigException
+     */
+    protected function registerAssets()
+    {
         switch ($this->bootstrapVersion) {
             case self::BOOTSTRAP2:
                 DateRangePickerBootstrap2Asset::register($this->view);
@@ -85,44 +105,30 @@ class DateRangePicker extends InputWidget
             default:
                 throw new InvalidConfigException('Invalid bootstrap version: ' . $this->bootstrapVersion);
         }
-
-        $containerID = $this->options['id'];
-
-        if (strncmp($this->dateFormat, 'php:', 4) === 0) {
-            $format = substr($this->dateFormat, 4);
-        } else {
-            $format = FormatConverter::convertDateIcuToPhp($this->dateFormat, 'datetime', $this->language);
-        }
-        $this->clientOptions['format'] = $this->convertDateFormat($format);
-        $this->clientOptions['timePicker'] = $this->timePicker;
-        $this->clientOptions['timePicker12Hour'] = $this->timePicker12Hour;
-        $this->clientOptions['separator'] = $this->separator;
-
-        $this->setupRanges();
-        $this->localize();
-
-
-        $this->registerClientOptions('daterangepicker', $containerID);
     }
 
-    protected function renderWidget()
+    /**
+     * @return string
+     */
+    protected function renderInput()
     {
-        if ($this->hasModel()) {
-            $value = Html::getAttributeValue($this->model, $this->attribute);
-        } else {
-            $value = $this->value;
-        }
-
         $options = $this->options;
-        $options['value'] = $value;
 
-        if ($this->hasModel()) {
-            $contents[] = Html::activeTextInput($this->model, $this->attribute, $options);
+        if (isset($options['tag'])) {
+            if ($options['tag'] === false) {
+                return '';
+            }
+
+            $tag = ArrayHelper::remove($options, 'tag');
+            $value = $this->hasModel() ? Html::getAttributeValue($this->model, $this->attribute) : $this->value;
+            return Html::tag($tag, $value, $options);
         } else {
-            $contents[] = Html::textInput($this->name, $value, $options);
+            if ($this->hasModel()) {
+                return Html::activeTextInput($this->model, $this->attribute, $options);
+            } else {
+                return Html::textInput($this->name, $this->value, $options);
+            }
         }
-
-        return implode("\n", $contents);
     }
 
     /**
@@ -213,24 +219,35 @@ class DateRangePicker extends InputWidget
 
     /**
      * Registers a specific jQuery UI widget options
-     * @param string $name the name of the jQuery UI widget
-     * @param string $id the ID of the widget
+     * @throws InvalidConfigException
      */
-    protected function registerClientOptions($name, $id)
+    protected function registerClientScript()
     {
-        if ($this->clientOptions !== false) {
-            $options = empty($this->clientOptions) ? '' : Json::encode($this->clientOptions);
-            $js = "jQuery('#$id').$name($options);";
-            $this->getView()->registerJs($js);
+        $this->registerAssets();
+
+        $id = isset($this->options['id']) ? $this->options['id'] : $this->getId();
+
+        if (strncmp($this->dateFormat, 'php:', 4) === 0) {
+            $format = substr($this->dateFormat, 4);
+        } else {
+            $format = FormatConverter::convertDateIcuToPhp($this->dateFormat, 'datetime', $this->language);
         }
 
+        $options = ArrayHelper::merge([
+            'format' => $this->convertDateFormat($format),
+            'timePicker' => $this->timePicker,
+            'timePicker12Hour' => $this->timePicker12Hour,
+            'separator' => $this->separator,
+        ], $this->clientOptions);
+
+        $this->getView()->registerJs("$('#$id').daterangepicker(" . Json::encode($options) . ');');
+
         if ($this->clientEvents) {
-            $js = "jQuery('#$id')";
+            $js = "$('#$id')";
             foreach ($this->clientEvents as $event => $handler) {
                 $js .= ".on('$event', $handler)";
             }
-            $js .= ';';
-            $this->getView()->registerJs($js);
+            $this->getView()->registerJs($js . ';');
         }
     }
 }
