@@ -34,6 +34,7 @@ class DateRangePicker extends InputWidget
      * ```php
      * 'MM/dd/yyyy' // date in ICU format
      * 'php:m/d/Y' // the same date in PHP format
+     * 'moment:L' // the same date, but format will be received from moment.js
      * ```
      *
      * When is not set, will be provided by `moment.js` client library.
