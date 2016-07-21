@@ -2,8 +2,7 @@
 
 namespace omnilight\widgets;
 
-use omnilight\assets\DateRangePickerBootstrap2Asset;
-use omnilight\assets\DateRangePickerBootstrap3Asset;
+use omnilight\assets\DateRangePickerAsset;
 use Yii;
 use yii\base\InvalidConfigException;
 use yii\helpers\ArrayHelper;
@@ -15,15 +14,27 @@ use yii\widgets\InputWidget;
 
 
 /**
- * Class DateRangePicker
+ * Class DateRangePicker is a wrapper for a [DateRagePicker](http://www.daterangepicker.com/) JS plugin
+ *
+ * @author Pavel Agalecky <pavel.agalecky@gmail.com>
+ * @author Dmitry Naumenko <d.naumenko.a@gmail.com>
  */
 class DateRangePicker extends InputWidget
 {
-    const BOOTSTRAP2 = 'bootstrap2';
-    const BOOTSTRAP3 = 'bootstrap3';
-
     /**
-     * @var string
+     * @var string the default format string to be used to format a date.
+     * It can be a custom format as specified in the [ICU manual](http://userguide.icu-project.org/formatparse/datetime#TOC-Date-Time-Format-Syntax).
+     * Alternatively this can be a string prefixed with `php:` representing a format that can be recognized by the
+     * PHP [date()](http://php.net/manual/en/function.date.php)-function.
+     *
+     * For example:
+     *
+     * ```php
+     * 'MM/dd/yyyy' // date in ICU format
+     * 'php:m/d/Y' // the same date in PHP format
+     * ```
+     *
+     * When is not set, will be provided by `moment.js` client library.
      */
     public $dateFormat;
     /**
@@ -38,10 +49,6 @@ class DateRangePicker extends InputWidget
      * @var bool
      */
     public $timePicker12Hour = false;
-    /**
-     * @var string
-     */
-    public $bootstrapVersion = self::BOOTSTRAP3;
     /**
      * @var array
      */
@@ -69,9 +76,6 @@ class DateRangePicker extends InputWidget
     public function init()
     {
         parent::init();
-        if ($this->dateFormat === null) {
-            $this->dateFormat = $this->timePicker ? Yii::$app->formatter->datetimeFormat : Yii::$app->formatter->dateFormat;
-        }
         if ($this->language === null) {
             $this->language = Yii::$app->language;
         }
@@ -95,16 +99,7 @@ class DateRangePicker extends InputWidget
      */
     protected function registerAssets()
     {
-        switch ($this->bootstrapVersion) {
-            case self::BOOTSTRAP2:
-                DateRangePickerBootstrap2Asset::register($this->view);
-                break;
-            case self::BOOTSTRAP3:
-                DateRangePickerBootstrap3Asset::register($this->view);
-                break;
-            default:
-                throw new InvalidConfigException('Invalid bootstrap version: ' . $this->bootstrapVersion);
-        }
+        DateRangePickerAsset::register($this->view);
     }
 
     /**
@@ -196,18 +191,31 @@ class DateRangePicker extends InputWidget
         if ($this->defaultRanges && ArrayHelper::getValue($this->clientOptions, 'ranges') === null) {
             $this->clientOptions['ranges'] = [
                 Yii::t('omnilight/daterangepicker', 'Today', [], $this->language) => new JsExpression('[new Date(), new Date()]'),
-                Yii::t('omnilight/daterangepicker', 'Yesterday', [], $this->language) => new JsExpression('[moment().subtract("days", 1), moment().subtract("days", 1)]'),
-                Yii::t('omnilight/daterangepicker', 'Last 7 Days', [], $this->language) => new JsExpression('[moment().subtract("days", 6), new Date()]'),
-                Yii::t('omnilight/daterangepicker', 'Last 30 Days', [], $this->language) => new JsExpression('[moment().subtract("days", 29), new Date()]'),
+                Yii::t('omnilight/daterangepicker', 'Yesterday', [], $this->language) => new JsExpression('[moment().subtract(1, "days"), moment().subtract(1, "days")]'),
+                Yii::t('omnilight/daterangepicker', 'Last 7 Days', [], $this->language) => new JsExpression('[moment().subtract(6, "days"), new Date()]'),
+                Yii::t('omnilight/daterangepicker', 'Last 30 Days', [], $this->language) => new JsExpression('[moment().subtract(29, "days"), new Date()]'),
                 Yii::t('omnilight/daterangepicker', 'This Month', [], $this->language) => new JsExpression('[moment().startOf("month"), moment().endOf("month")]'),
-                Yii::t('omnilight/daterangepicker', 'Last Month', [], $this->language) => new JsExpression('[moment().subtract("month", 1).startOf("month"), moment().subtract("month", 1).endOf("month")]'),
+                Yii::t('omnilight/daterangepicker', 'Last Month', [], $this->language) => new JsExpression('[moment().subtract(1, "month").startOf("month"), moment().subtract(1, "month").endOf("month")]'),
             ];
         }
     }
 
     protected function localize()
     {
+        if (isset($this->dateFormat)) {
+            if (strncmp($this->dateFormat, 'php:', 4) === 0) {
+                $format = substr($this->dateFormat, 4);
+            } else {
+                $format = FormatConverter::convertDateIcuToPhp($this->dateFormat, 'datetime', $this->language);
+            }
+
+            $format = $this->convertDateFormat($format);
+        } else {
+            $format = new JsExpression("moment.localeData().longDateFormat('L')");
+        }
+
         $this->clientOptions['locale'] = [
+            'format' => $format,
             'applyLabel' => Yii::t('omnilight/daterangepicker', 'Apply', [], $this->language),
             'cancelLabel' => Yii::t('omnilight/daterangepicker', 'Cancel', [], $this->language),
             'fromLabel' => Yii::t('omnilight/daterangepicker', 'From', [], $this->language),
@@ -227,14 +235,7 @@ class DateRangePicker extends InputWidget
 
         $id = isset($this->options['id']) ? $this->options['id'] : $this->getId();
 
-        if (strncmp($this->dateFormat, 'php:', 4) === 0) {
-            $format = substr($this->dateFormat, 4);
-        } else {
-            $format = FormatConverter::convertDateIcuToPhp($this->dateFormat, 'datetime', $this->language);
-        }
-
         $options = ArrayHelper::merge([
-            'format' => $this->convertDateFormat($format),
             'timePicker' => $this->timePicker,
             'timePicker12Hour' => $this->timePicker12Hour,
             'separator' => $this->separator,
