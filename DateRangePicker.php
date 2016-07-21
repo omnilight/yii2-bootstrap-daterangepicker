@@ -26,6 +26,8 @@ class DateRangePicker extends InputWidget
      * It can be a custom format as specified in the [ICU manual](http://userguide.icu-project.org/formatparse/datetime#TOC-Date-Time-Format-Syntax).
      * Alternatively this can be a string prefixed with `php:` representing a format that can be recognized by the
      * PHP [date()](http://php.net/manual/en/function.date.php)-function.
+     * Alternatively this can be a string prefixed with `moment:` representing a format that can be recognized by the
+     * moment.js [longDateFormat](http://momentjs.com/docs/#/customization/long-date-formats/) function.
      *
      * For example:
      *
@@ -78,6 +80,9 @@ class DateRangePicker extends InputWidget
         parent::init();
         if ($this->language === null) {
             $this->language = Yii::$app->language;
+        }
+        if (!isset($this->dateFormat)) {
+            $this->dateFormat = 'moment:L';
         }
     }
 
@@ -202,16 +207,13 @@ class DateRangePicker extends InputWidget
 
     protected function localize()
     {
-        if (isset($this->dateFormat)) {
-            if (strncmp($this->dateFormat, 'php:', 4) === 0) {
-                $format = substr($this->dateFormat, 4);
-            } else {
-                $format = FormatConverter::convertDateIcuToPhp($this->dateFormat, 'datetime', $this->language);
-            }
-
-            $format = $this->convertDateFormat($format);
+        if (strncmp($this->dateFormat, 'php:', 4) === 0) {
+            $format = $this->convertDateFormat(substr($this->dateFormat, 4));
+        } elseif (strncmp($this->dateFormat, 'moment:', 7) === 0) {
+            $format = Json::encode(substr($this->dateFormat, 7));
+            $format = new JsExpression("moment.localeData().longDateFormat(" . $format . ")");
         } else {
-            $format = new JsExpression("moment.localeData().longDateFormat('L')");
+            $format = $this->convertDateFormat(FormatConverter::convertDateIcuToPhp($this->dateFormat, 'datetime', $this->language));
         }
 
         $this->clientOptions['locale'] = [
