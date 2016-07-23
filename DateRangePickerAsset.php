@@ -16,6 +16,10 @@ class DateRangePickerAsset extends AssetBundle
         'daterangepicker.js'
     ];
 
+    public $css = [
+        'daterangepicker.css'
+    ];
+
     public $depends = [
         'omnilight\assets\MomentAsset',
         'omnilight\assets\MomentLanguageAsset',
